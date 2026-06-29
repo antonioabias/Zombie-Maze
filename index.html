@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Zombie Maze</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="rotate-msg">
+    <span>📱</span>
+    Rotate your device to landscape to play!
+  </div>
+
+  <!-- ═══════════ MAIN MENU ═══════════ -->
+  <div id="main-menu">
+    <div class="menu-bg"></div>
+    <div class="menu-content">
+      <div class="menu-title-area">
+        <h1 class="menu-title">Zombie Maze</h1>
+        <p class="menu-subtitle">Survive the horde. Find the exit.</p>
+      </div>
+      <nav class="menu-buttons">
+        <button class="menu-btn primary" data-action="play">
+          <span class="btn-icon">▶</span> Play
+        </button>
+        <button class="menu-btn" data-action="instructions">
+          <span class="btn-icon">📖</span> Instructions
+        </button>
+        <button class="menu-btn" data-action="settings">
+          <span class="btn-icon">⚙️</span> Settings
+        </button>
+        <button class="menu-btn" data-action="about">
+          <span class="btn-icon">ℹ️</span> About
+        </button>
+      </nav>
+    </div>
+  </div>
+
+  <!-- ═══════════ MODALS ═══════════ -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-box">
+      <button class="modal-close" id="modal-close">✕</button>
+      <h2 id="modal-title">Title</h2>
+      <div id="modal-body" class="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ GAME UI ═══════════ -->
+  <div id="game-wrap" class="hidden">
+    <div id="hud">
+      <div class="hud-pill">
+        <span style="font-size:16px;">🌿</span>
+        <span class="hud-level" id="level-display">Level 1</span>
+      </div>
+      <span class="hud-hint">WASD / Arrow Keys</span>
+      <div class="hud-pill">
+        <div class="hud-lives" id="lives-display">
+          <span class="heart">❤️</span>
+          <span class="heart">❤️</span>
+          <span class="heart">❤️</span>
+        </div>
+      </div>
+    </div>
+    <div id="alert-bar">🧟 HERD INCOMING!</div>
+    <div id="game-container"></div>
+    <div id="overlay">
+      <div id="overlay-box">
+        <span class="overlay-icon" id="overlay-icon">🌿</span>
+        <h2 id="overlay-title">Level Clear!</h2>
+        <p id="overlay-msg">You escaped the maze!</p>
+        <button id="overlay-btn">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,216 @@
+/* ═══════════ RESET & BASE ═══════════ */
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:#0a1a0a;
+  display:flex;align-items:center;justify-content:center;
+  width:100vw;height:100vh;overflow:hidden;
+  font-family:'Fredoka One',cursive;
+}
+
+/* ═══════════ GAME WRAPPER ═══════════ */
+#game-wrap{
+  position:relative;
+  width:100vw;height:100vh;overflow:hidden;
+}
+
+/* ═══════════ HUD ═══════════ */
+#hud{
+  position:absolute;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 20px;
+  background:linear-gradient(180deg,rgba(0,0,0,0.75) 0%,transparent 100%);
+  pointer-events:none;
+}
+.hud-pill{
+  background:rgba(0,0,0,0.6);
+  border:2px solid rgba(255,255,255,0.15);
+  border-radius:40px;padding:6px 18px;
+  display:flex;align-items:center;gap:8px;
+  backdrop-filter:blur(6px);
+}
+.hud-level{color:#ffe135;font-size:20px;text-shadow:0 2px 8px rgba(255,200,0,0.6);}
+.hud-hint{color:rgba(255,255,255,0.45);font-size:12px;font-family:'Nunito',sans-serif;letter-spacing:1px;}
+.hud-lives{display:flex;gap:4px;align-items:center;}
+.heart{font-size:24px;}
+.heart.lost{filter:grayscale(1);opacity:0.3;}
+
+/* ═══════════ ALERT BAR ═══════════ */
+#alert-bar{
+  position:absolute;top:68px;left:50%;transform:translateX(-50%);
+  z-index:99;pointer-events:none;
+  background:rgba(200,20,20,0.9);
+  border:2px solid #ff6b6b;border-radius:30px;
+  padding:6px 24px;color:#fff;font-size:14px;letter-spacing:1px;
+  opacity:0;transition:opacity 0.3s;white-space:nowrap;
+}
+#alert-bar.show{opacity:1;}
+
+/* ═══════════ LEVEL COMPLETE / GAME OVER OVERLAY ═══════════ */
+#overlay{
+  position:absolute;inset:0;z-index:200;
+  display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.78);backdrop-filter:blur(8px);
+}
+#overlay.show{display:flex;}
+#overlay-box{
+  text-align:center;padding:40px 56px;
+  background:linear-gradient(160deg,#1a3a1a,#0f1f0f);
+  border:3px solid #5dde3a;border-radius:28px;
+  box-shadow:0 0 60px rgba(93,222,58,0.25),0 24px 80px rgba(0,0,0,0.6);
+  max-width:380px;width:90%;
+}
+#overlay-box h2{font-size:34px;margin-bottom:8px;color:#ffe135;text-shadow:0 0 20px rgba(255,200,0,0.5);}
+#overlay-box p{color:rgba(255,255,255,0.7);font-family:'Nunito',sans-serif;font-size:14px;margin-bottom:24px;line-height:1.6;}
+#overlay-box button{
+  padding:13px 40px;
+  background:linear-gradient(135deg,#5dde3a,#3ab820);
+  color:#0f2a0a;border:none;border-radius:50px;
+  font-size:17px;font-family:'Fredoka One',cursive;
+  cursor:pointer;letter-spacing:1px;
+  box-shadow:0 4px 0 #2a8a10,0 8px 20px rgba(93,222,58,0.3);
+  transition:all 0.15s;
+}
+#overlay-box button:hover{transform:translateY(-2px);}
+#overlay-box button:active{transform:translateY(2px);box-shadow:0 2px 0 #2a8a10;}
+.overlay-icon{font-size:52px;margin-bottom:10px;display:block;}
+
+/* ═══════════ ROTATE MESSAGE ═══════════ */
+#rotate-msg{
+  display:none;
+  position:fixed;inset:0;z-index:9999;
+  background:#0a1a0a;
+  flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  color:#fff;font-size:22px;text-align:center;padding:2rem;
+}
+#rotate-msg span{font-size:56px;}
+@media(max-width:768px) and (orientation:portrait){
+  #rotate-msg{display:flex;}
+  #game-wrap{display:none;}
+}
+
+/* ═══════════ MAIN MENU ═══════════ */
+#main-menu{
+  position:fixed;inset:0;z-index:500;
+  display:flex;align-items:center;justify-content:flex-start;
+  overflow:hidden;
+}
+.menu-bg{
+  position:absolute;inset:0;
+  background-image:url('../assets/ui/menu-background.jpg');
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  z-index:-1;
+}
+.menu-content{
+  position:relative;
+  padding:60px 80px;
+  max-width:520px;width:100%;
+  z-index:1;
+}
+.menu-title-area{margin-bottom:50px;}
+.menu-title{
+  font-family:'Fredoka One',cursive;
+  font-size:64px;color:#ffe135;
+  text-shadow:0 0 30px rgba(255,200,0,0.5),0 4px 0 #2a8a10,0 8px 20px rgba(0,0,0,0.6);
+  line-height:1;margin-bottom:12px;letter-spacing:2px;
+}
+.menu-subtitle{
+  font-family:'Nunito',sans-serif;
+  font-size:18px;color:rgba(255,255,255,0.7);
+  letter-spacing:1px;font-weight:700;
+}
+.menu-buttons{display:flex;flex-direction:column;gap:16px;}
+.menu-btn{
+  display:flex;align-items:center;gap:16px;
+  padding:18px 32px;
+  font-family:'Fredoka One',cursive;font-size:22px;color:#fff;
+  background:linear-gradient(135deg,rgba(35,96,16,0.85),rgba(15,31,15,0.85));
+  border:2px solid rgba(93,222,58,0.5);
+  border-radius:16px;cursor:pointer;text-align:left;letter-spacing:1px;
+  backdrop-filter:blur(8px);
+  box-shadow:0 4px 0 rgba(0,0,0,0.4),0 8px 24px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+  transition:all 0.18s ease;
+}
+.menu-btn:hover{
+  transform:translateX(8px);
+  background:linear-gradient(135deg,rgba(58,138,26,0.95),rgba(25,50,20,0.95));
+  border-color:#5dde3a;
+  box-shadow:0 6px 0 rgba(0,0,0,0.4),0 12px 32px rgba(93,222,58,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.menu-btn:active{
+  transform:translateX(8px) translateY(2px);
+  box-shadow:0 2px 0 rgba(0,0,0,0.4),0 4px 12px rgba(93,222,58,0.2);
+}
+.menu-btn.primary{
+  background:linear-gradient(135deg,#5dde3a,#3ab820);
+  color:#0f2a0a;border-color:#78e85a;font-size:26px;padding:22px 36px;
+  box-shadow:0 5px 0 #2a8a10,0 10px 28px rgba(93,222,58,0.4);
+}
+.menu-btn.primary:hover{
+  background:linear-gradient(135deg,#78e85a,#4ac830);
+  transform:translateX(8px) translateY(-2px);
+  box-shadow:0 7px 0 #2a8a10,0 14px 36px rgba(93,222,58,0.5);
+}
+.btn-icon{font-size:1em;width:32px;text-align:center;}
+
+/* ═══════════ MODAL (Instructions / Settings / About) ═══════════ */
+.modal{
+  position:fixed;inset:0;z-index:600;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.78);backdrop-filter:blur(8px);
+  animation:fadeIn 0.2s ease;
+}
+.modal.hidden{display:none;}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+
+.modal-box{
+  position:relative;
+  max-width:560px;width:90%;max-height:80vh;overflow-y:auto;
+  padding:40px 48px;
+  background:linear-gradient(160deg,#1a3a1a,#0f1f0f);
+  border:3px solid #5dde3a;border-radius:24px;
+  box-shadow:0 0 60px rgba(93,222,58,0.25),0 24px 80px rgba(0,0,0,0.6);
+  color:#fff;
+}
+.modal-box h2{
+  font-family:'Fredoka One',cursive;
+  font-size:32px;color:#ffe135;margin-bottom:20px;
+  text-shadow:0 0 20px rgba(255,200,0,0.4);
+}
+.modal-close{
+  position:absolute;top:16px;right:16px;
+  width:36px;height:36px;border:none;border-radius:50%;
+  background:rgba(255,255,255,0.1);color:#fff;font-size:18px;
+  cursor:pointer;transition:all 0.15s;
+}
+.modal-close:hover{background:rgba(255,80,80,0.3);transform:rotate(90deg);}
+
+.modal-body{
+  font-family:'Nunito',sans-serif;font-size:15px;
+  line-height:1.7;color:rgba(255,255,255,0.85);
+}
+.modal-body h3{color:#5dde3a;margin:16px 0 8px;font-size:18px;}
+.modal-body ul{list-style:none;padding-left:0;}
+.modal-body li{padding:6px 0 6px 28px;position:relative;}
+.modal-body li::before{content:'🌿';position:absolute;left:0;}
+.modal-body kbd{
+  display:inline-block;padding:2px 8px;
+  background:rgba(255,255,255,0.1);
+  border:1px solid rgba(255,255,255,0.2);
+  border-radius:4px;font-family:monospace;font-size:13px;color:#ffe135;
+}
+
+/* ═══════════ SETTINGS SLIDERS ═══════════ */
+.setting-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.1);
+}
+.setting-row:last-child{border-bottom:none;}
+.setting-row label{font-family:'Fredoka One',cursive;color:#fff;font-size:16px;}
+.setting-row input[type="range"]{width:180px;accent-color:#5dde3a;}
+
+/* ═══════════ UTILITIES ═══════════ */
+.hidden{display:none !important;}

@@ -38,6 +38,22 @@ function startGame() {
     const scene = game.scene.getScene('MazeScene');
     if (scene) menu.applyToScene(scene);
   });
+
+  // ── In-game buttons ──────────────────────────────────────
+  document.getElementById('btn-home').addEventListener('click', () => {
+    if (game) {
+      game.scene.getScene('MazeScene')?.sound?.stopAll();
+      game.destroy(true);
+      game = null;
+    }
+    document.getElementById('overlay').classList.remove('show');
+    document.getElementById('game-wrap').classList.add('hidden');
+    document.getElementById('main-menu').classList.remove('hidden');
+  });
+
+  document.getElementById('btn-settings').addEventListener('click', () => {
+    menu._openModal('settings');
+  });
 }
 
 // Resize handler

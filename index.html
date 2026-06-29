@@ -54,15 +54,22 @@
         <span style="font-size:16px;">🌿</span>
         <span class="hud-level" id="level-display">Level 1</span>
       </div>
-      <span class="hud-hint">WASD / Arrow Keys</span>
-      <div class="hud-pill">
-        <div class="hud-lives" id="lives-display">
-          <span class="heart">❤️</span>
-          <span class="heart">❤️</span>
-          <span class="heart">❤️</span>
+      <div style="position:absolute;left:50%;transform:translateX(-50%);">
+        <div class="hud-pill">
+          <div class="hud-lives" id="lives-display">
+            <span class="heart">❤️</span>
+            <span class="heart">❤️</span>
+            <span class="heart">❤️</span>
+          </div>
         </div>
       </div>
+      <div style="width:120px;"></div>
     </div>
+    <div id="game-controls">
+      <button id="btn-home" title="Main Menu">🏠</button>
+      <button id="btn-settings" title="Settings">⚙️</button>
+    </div>
+
     <div id="alert-bar">🧟 HERD INCOMING!</div>
     <div id="game-container"></div>
     <div id="overlay">
@@ -74,6 +81,8 @@
       </div>
     </div>
   </div>
+
+  
 
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
   <script type="module" src="js/main.js"></script>

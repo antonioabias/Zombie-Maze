@@ -22,10 +22,15 @@ export class MazeScene extends Phaser.Scene {
     this.load.image('player_back',  'assets/sprites/Survivor-Back.png');
     this.load.image('player_left',  'assets/sprites/Survivor-Left.png');
     this.load.image('player_right', 'assets/sprites/Survivor-Right.png');
-    this.load.image('zombie_front', 'assets/sprites/Zombie-Front.png');
-    this.load.image('zombie_back',  'assets/sprites/Zombie-Back.png');
-    this.load.image('zombie_left',  'assets/sprites/Zombie-Left.png');
-    this.load.image('zombie_right', 'assets/sprites/Zombie-Right.png');
+
+    // Zombie spritesheets
+    this.load.spritesheet('zombie_walk', 'assets/sprites/Zombie-walk.png', {
+      frameWidth: 256, frameHeight: 256
+    });
+    this.load.spritesheet('zombie_run', 'assets/sprites/Zombie-run.png', {
+      frameWidth: 256, frameHeight: 256
+    });
+
     this.load.audio('bgmusic',     'assets/music/backgroundmusic.mp3');
     this.load.audio('zombieSound', 'assets/music/zombie.mp3');
 
@@ -37,7 +42,9 @@ export class MazeScene extends Phaser.Scene {
       bar.fillRect(this.scale.width/2-160, this.scale.height/2-14, 320*v, 28);
     });
     this.load.on('complete', () => bar.destroy());
-    this.load.on('loaderror', () => {});
+    this.load.on('loaderror', (file) => {
+  console.warn('Failed to load:', file.key, file.src);
+});
   }
 
   create(){
@@ -47,9 +54,9 @@ export class MazeScene extends Phaser.Scene {
     state.herdAlerted  = false;
     state.invincible   = false;
 
-    // ── OPTIMIZATION: Build a spatial wall grid for O(1) collision ──
+    // Spatial wall grid for O(1) collision
     this.wallGrid = Array.from({ length: ROWS }, () => new Array(COLS).fill(false));
-    this.floorCells = [];      // cached once
+    this.floorCells = [];
     this.startX = TW/2;
     this.startY = TH/2;
     this.exitCol = -1;
@@ -70,9 +77,30 @@ export class MazeScene extends Phaser.Scene {
     }
 
     this.hasPlayerFront = this.textures.exists('player_front');
-    this.hasZombieFront = this.textures.exists('zombie_front');
+    this.hasZombieSheet = this.textures.exists('zombie_walk');
     this.hasBGM         = this.cache.audio.exists('bgmusic');
     this.hasZSound      = this.cache.audio.exists('zombieSound');
+
+    // Create zombie animations
+    if(this.hasZombieSheet){
+      // Only create if not already created (scene restart guard)
+      if(!this.anims.exists('zombie_walk')){
+        this.anims.create({
+          key: 'zombie_walk',
+          frames: this.anims.generateFrameNumbers('zombie_walk', { start: 0, end: 24 }),
+          frameRate: 8,
+          repeat: -1
+        });
+      }
+      if(!this.anims.exists('zombie_run')){
+        this.anims.create({
+          key: 'zombie_run',
+          frames: this.anims.generateFrameNumbers('zombie_run', { start: 0, end: 24 }),
+          frameRate: 14,
+          repeat: -1
+        });
+      }
+    }
 
     this._buildWorld();
     this._spawnPlayer();
@@ -80,6 +108,11 @@ export class MazeScene extends Phaser.Scene {
     this._spawnZombies();
     this._setupCamera();
     this._setupInput();
+
+    // COMMENTED OUT: Fog of war / darkness overlay
+    // in create(), before _buildFog()
+this.fogRevealRadius = SIGHT_R;
+this._buildFog();
 
     document.getElementById('level-display').textContent = `Level ${state.currentLevel + 1}`;
     this.updateLivesUI();
@@ -165,6 +198,41 @@ export class MazeScene extends Phaser.Scene {
     this.worldH    = worldH;
   }
 
+  // COMMENTED OUT: Fog of war system
+  _buildFog(){
+  const totalW = COLS * TW;
+  const totalH = ROWS * TH;
+
+  // Dark overlay covering the whole world
+  this.fogLayer = this.add.graphics().setDepth(49);
+  this.fogLayer.fillStyle(0x000000, 0.88);
+  this.fogLayer.fillRect(0, 0, totalW, totalH);
+
+  // Circle mask that follows the player
+  this.fogMaskShape = this.make.graphics({ x: 0, y: 0, add: false });
+  this.fogMaskShape.fillStyle(0xffffff);
+  this.fogMaskShape.fillCircle(0, 0, this.fogRevealRadius);
+
+  const mask = this.fogMaskShape.createGeometryMask();
+  mask.invertAlpha = true; // punch hole in the fog
+  this.fogLayer.setMask(mask);
+
+  this.fogRevealRadius = SIGHT_R;
+}
+
+_updateFog(){
+  // Move the mask circle to follow the player
+  this.fogMaskShape.x = this.playerBody.x;
+  this.fogMaskShape.y = this.playerBody.y;
+
+  // Redraw circle at new position
+  this.fogMaskShape.clear();
+  this.fogMaskShape.fillStyle(0xffffff);
+  this.fogMaskShape.fillCircle(0, 0, this.fogRevealRadius);
+}
+
+  
+
   _spawnPlayer(){
     const playerSize = TW * 0.9;
     if(this.hasPlayerFront){
@@ -198,9 +266,8 @@ export class MazeScene extends Phaser.Scene {
   _spawnZombies(){
     this.zombies = [];
     const cfg = LEVEL_CONFIG[state.currentLevel] || { solo: 2, herd: 4 };
-    const zombieSize = TW * 1.0;
+    const zombieSize = TW * 1.80;
 
-    // Spawn far from player
     const farCells = this.floorCells.filter(({x,y}) =>
       Math.hypot(x - this.startX, y - this.startY) > 5*TW
     );
@@ -210,11 +277,13 @@ export class MazeScene extends Phaser.Scene {
     for(let i=0; i<totalZ; i++){
       const cell = spawnCells[i % spawnCells.length];
       let zbody;
-      if(this.hasZombieFront){
-        zbody = this.physics.add.image(cell.x, cell.y, 'zombie_front')
+
+      if(this.hasZombieSheet){
+        zbody = this.physics.add.sprite(cell.x, cell.y, 'zombie_walk')
           .setDisplaySize(zombieSize, zombieSize).setDepth(3);
-        zbody.lastDir = 'front';
+        zbody.play('zombie_walk');
       } else {
+        // Fallback drawn zombie
         const zg = this.add.graphics();
         zg.fillStyle(0x8acc70); zg.fillEllipse(0,-18,22,22);
         zg.fillStyle(0x5a7a3a); zg.fillRect(-10,-6,20,20);
@@ -226,7 +295,9 @@ export class MazeScene extends Phaser.Scene {
         zg.generateTexture(fk, 30, 42); zg.destroy();
         zbody = this.physics.add.image(cell.x, cell.y, fk).setDepth(3);
       }
+
       zbody.chasing     = false;
+      zbody.wasChasing  = false; // track animation state changes
       zbody.chaseTimer  = 0;
       zbody.wanderTimer = Phaser.Math.FloatBetween(0.3, 1.8);
       zbody.targetX     = cell.x;
@@ -249,20 +320,20 @@ export class MazeScene extends Phaser.Scene {
     this.wasd    = this.input.keyboard.addKeys({ up:'W', down:'S', left:'A', right:'D' });
   }
 
-  // ── OPTIMIZATION: O(1) wall collision via grid ────────────
+  // O(1) wall collision via grid
   wallCollides(x, y, r){
-    const minC = Math.floor((x - r) / TW);
-    const maxC = Math.floor((x + r) / TW);
-    const minR = Math.floor((y - r) / TH);
-    const maxR = Math.floor((y + r) / TH);
-    for(let rr = minR; rr <= maxR; rr++){
-      for(let cc = minC; cc <= maxC; cc++){
-        if(rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) continue;
-        if(this.wallGrid[rr][cc]) return true;
-      }
+  const minC = Math.floor((x - r) / TW);
+  const maxC = Math.floor((x + r) / TW);
+  const minR = Math.floor((y - r) / TH);
+  const maxR = Math.floor((y + r) / TH);
+  for(let rr = minR; rr <= maxR; rr++){
+    for(let cc = minC; cc <= maxC; cc++){
+      if(rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) continue;
+      if(this.wallGrid[rr][cc]) return true;
     }
-    return false;
   }
+  return false;
+}
 
   hasLOS(ax, ay, bx, by){
     const steps = 28;
@@ -273,7 +344,6 @@ export class MazeScene extends Phaser.Scene {
     return true;
   }
 
-  // ── OPTIMIZATION: Use cached floorCells ───────────────────
   pickRandomFloorTarget(){
     return this.floorCells.length
       ? Phaser.Utils.Array.GetRandom(this.floorCells)
@@ -281,9 +351,12 @@ export class MazeScene extends Phaser.Scene {
   }
 
   update(time, delta){
-    if(this.gameOver || this.transitioning) return;
-    const dt = delta / 1000;
-    const p  = this.playerBody;
+  if(this.gameOver || this.transitioning) return;
+  const dt = delta / 1000;
+  const p  = this.playerBody;
+
+  this._updateFog();
+
 
     // Exit glow
     this.exitGlowT += dt * 2.5;
@@ -338,23 +411,37 @@ export class MazeScene extends Phaser.Scene {
       if(dist < closestZombieDist) closestZombieDist = dist;
 
       const canSee = dist < SIGHT_R && this.hasLOS(z.x, z.y, p.x, p.y);
+
       if(canSee){
-        z.chasing = true;
-        z.chaseTimer = CHASE_MEMORY;
+        // Transition to chasing
+        if(!z.chasing){
+          z.chasing = true;
+          z.chaseTimer = CHASE_MEMORY;
+          // Switch to run animation
+          if(this.hasZombieSheet) z.play('zombie_run', true);
+        } else {
+          z.chaseTimer = CHASE_MEMORY; // keep refreshing while in sight
+        }
+
         if(!state.herdAlerted){
           state.herdAlerted = true;
           for(const other of this.zombies){
             if(other !== z && other.isHerd && Math.hypot(other.x - z.x, other.y - z.y) < HERD_RADIUS){
               other.chasing = true;
               other.chaseTimer = CHASE_MEMORY;
+              if(this.hasZombieSheet) other.play('zombie_run', true);
             }
           }
           document.getElementById('alert-bar').classList.add('show');
           this.time.delayedCall(3000, () => document.getElementById('alert-bar').classList.remove('show'));
         }
-      } else if(z.chaseTimer > 0){
+      } else if(z.chasing){
         z.chaseTimer -= dt;
-        if(z.chaseTimer <= 0) z.chasing = false;
+        if(z.chaseTimer <= 0){
+          z.chasing = false;
+          // Switch back to walk animation
+          if(this.hasZombieSheet) z.play('zombie_walk', true);
+        }
       }
 
       if(z.chasing){
@@ -369,17 +456,11 @@ export class MazeScene extends Phaser.Scene {
         else if(!this.wallCollides(z.x-20, zy2, 22)){ z.x -= 18*dt; z.y = zy2; }
         else if(!this.wallCollides(z.x+20, zy2, 22)){ z.x += 18*dt; z.y = zy2; }
 
-        if(this.hasZombieFront){
-          let newDir = z.lastDir;
-          if(Math.abs(dx) > Math.abs(dy)){
-            if(dx < 0) newDir = 'left'; else if(dx > 0) newDir = 'right';
-          } else {
-            if(dy < 0) newDir = 'back'; else if(dy > 0) newDir = 'front';
-          }
-          if(newDir !== z.lastDir){ z.lastDir = newDir; z.setTexture('zombie_' + newDir); }
-        } else {
+        // Flip sprite for left/right direction (no directional sheet needed)
+        if(this.hasZombieSheet){
           z.setFlipX(dx < 0);
         }
+
       } else {
         z.wanderTimer -= dt;
         const tdx = z.targetX - z.x, tdy = z.targetY - z.y;
@@ -402,15 +483,8 @@ export class MazeScene extends Phaser.Scene {
             if(dest){ z.targetX = dest.x; z.targetY = dest.y; }
             z.wanderTimer = Phaser.Math.FloatBetween(1.5, 3.0);
           }
-          if(this.hasZombieFront){
-            let newDir = z.lastDir;
-            if(Math.abs(wdx) > Math.abs(wdy)){
-              if(wdx < 0) newDir = 'left'; else if(wdx > 0) newDir = 'right';
-            } else {
-              if(wdy < 0) newDir = 'back'; else if(wdy > 0) newDir = 'front';
-            }
-            if(newDir !== z.lastDir){ z.lastDir = newDir; z.setTexture('zombie_' + newDir); }
-          } else {
+          // Flip for wander direction
+          if(this.hasZombieSheet){
             z.setFlipX(wdx < 0);
           }
         }
@@ -421,7 +495,7 @@ export class MazeScene extends Phaser.Scene {
       if(!state.invincible && dist < 30) this.hitPlayer();
     }
 
-    // ── OPTIMIZATION: Throttle zombie sound check ───────────
+    // Throttle zombie sound check
     if(this.hasZSound && this.zombieSound){
       if(time - this.lastZombieSoundCheck > 250){
         this.lastZombieSoundCheck = time;

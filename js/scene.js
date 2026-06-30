@@ -17,19 +17,22 @@ export class MazeScene extends Phaser.Scene {
     this.load.image('grass',  'assets/tiles/grass.png');
     this.load.image('dirt',   'assets/tiles/dirt.png');
     this.load.image('hedge',  'assets/tiles/hedge.png');
+    this.load.image('hedge-V', 'assets/tiles/hedge-V.png');
     this.load.image('heart',  'assets/ui/heart.png');
-    this.load.image('player_front', 'assets/sprites/Survivor-Front.png');
-    this.load.image('player_back',  'assets/sprites/Survivor-Back.png');
-    this.load.image('player_left',  'assets/sprites/Survivor-Left.png');
-    this.load.image('player_right', 'assets/sprites/Survivor-Right.png');
+    this.load.image('tree', 'assets/tiles/tree.png');
+
+    // Player sprites (using zombie run sheets temporarily)
+    this.load.spritesheet('player_lr',   'assets/sprites/Zombie-run.png',      { frameWidth: 256, frameHeight: 256 });
+    this.load.spritesheet('player_up',   'assets/sprites/Zombie-run-up.png',   { frameWidth: 256, frameHeight: 256 });
+    this.load.spritesheet('player_down', 'assets/sprites/Zombie-run-down.png', { frameWidth: 256, frameHeight: 256 });
 
     // Zombie spritesheets
-    this.load.spritesheet('zombie_walk', 'assets/sprites/Zombie-walk.png', {
-      frameWidth: 256, frameHeight: 256
-    });
-    this.load.spritesheet('zombie_run', 'assets/sprites/Zombie-run.png', {
-      frameWidth: 256, frameHeight: 256
-    });
+    this.load.spritesheet('zombie_lr',        'assets/sprites/Zombie-walk.png',      { frameWidth: 256, frameHeight: 256 });
+    this.load.spritesheet('zombie_lr_run',    'assets/sprites/Zombie-run.png',       { frameWidth: 256, frameHeight: 256 });
+    this.load.spritesheet('zombie_up',        'assets/sprites/Zombie-walk-up.png',   { frameWidth: 256, frameHeight: 256 });
+    this.load.spritesheet('zombie_up_run',    'assets/sprites/Zombie-run-up.png',    { frameWidth: 256, frameHeight: 256 });
+    this.load.spritesheet('zombie_down',      'assets/sprites/Zombie-walk-down.png', { frameWidth: 256, frameHeight: 256 });
+    this.load.spritesheet('zombie_down_run',  'assets/sprites/Zombie-run-down.png',  { frameWidth: 256, frameHeight: 256 });
 
     this.load.audio('bgmusic',     'assets/music/backgroundmusic.mp3');
     this.load.audio('zombieSound', 'assets/music/zombie.mp3');
@@ -37,14 +40,14 @@ export class MazeScene extends Phaser.Scene {
     const bar = this.add.graphics();
     this.load.on('progress', v => {
       bar.clear();
-      bar.fillStyle(0x000000,0.7); bar.fillRect(0,0,this.scale.width,this.scale.height);
+      bar.fillStyle(0x000000, 0.7); bar.fillRect(0, 0, this.scale.width, this.scale.height);
       bar.fillStyle(0x5dde3a);
       bar.fillRect(this.scale.width/2-160, this.scale.height/2-14, 320*v, 28);
     });
     this.load.on('complete', () => bar.destroy());
     this.load.on('loaderror', (file) => {
-  console.warn('Failed to load:', file.key, file.src);
-});
+      console.warn('Failed to load:', file.key, file.src);
+    });
   }
 
   create(){
@@ -76,32 +79,12 @@ export class MazeScene extends Phaser.Scene {
       }
     }
 
-    this.hasPlayerFront = this.textures.exists('player_front');
-    this.hasZombieSheet = this.textures.exists('zombie_walk');
+    this.hasPlayerSheet = this.textures.exists('player_lr');
+    this.hasZombieSheet = this.textures.exists('zombie_lr');
     this.hasBGM         = this.cache.audio.exists('bgmusic');
     this.hasZSound      = this.cache.audio.exists('zombieSound');
 
-    // Create zombie animations
-    if(this.hasZombieSheet){
-      // Only create if not already created (scene restart guard)
-      if(!this.anims.exists('zombie_walk')){
-        this.anims.create({
-          key: 'zombie_walk',
-          frames: this.anims.generateFrameNumbers('zombie_walk', { start: 0, end: 24 }),
-          frameRate: 8,
-          repeat: -1
-        });
-      }
-      if(!this.anims.exists('zombie_run')){
-        this.anims.create({
-          key: 'zombie_run',
-          frames: this.anims.generateFrameNumbers('zombie_run', { start: 0, end: 24 }),
-          frameRate: 14,
-          repeat: -1
-        });
-      }
-    }
-
+    this._createAnims();
     this._buildWorld();
     this._spawnPlayer();
     this._setupAudio();
@@ -109,13 +92,38 @@ export class MazeScene extends Phaser.Scene {
     this._setupCamera();
     this._setupInput();
 
-    // COMMENTED OUT: Fog of war / darkness overlay
-    // in create(), before _buildFog()
-this.fogRevealRadius = SIGHT_R;
-this._buildFog();
+    this.fogRevealRadius = SIGHT_R;
+    this._buildFog();
 
     document.getElementById('level-display').textContent = `Level ${state.currentLevel + 1}`;
     this.updateLivesUI();
+  }
+
+  _createAnims(){
+    const defs = [
+      // Player
+      { key: 'player_walk_lr',   sheet: 'player_lr',        s: 0, e: 24, fps: 10 },
+      { key: 'player_walk_up',   sheet: 'player_up',        s: 0, e: 24, fps: 10 },
+      { key: 'player_walk_down', sheet: 'player_down',      s: 0, e: 24, fps: 10 },
+      // Zombie walk
+      { key: 'z_walk_lr',        sheet: 'zombie_lr',        s: 0, e: 24, fps: 8  },
+      { key: 'z_walk_up',        sheet: 'zombie_up',        s: 0, e: 24, fps: 8  },
+      { key: 'z_walk_down',      sheet: 'zombie_down',      s: 0, e: 24, fps: 8  },
+      // Zombie run
+      { key: 'z_run_lr',         sheet: 'zombie_lr_run',    s: 0, e: 24, fps: 14 },
+      { key: 'z_run_up',         sheet: 'zombie_up_run',    s: 0, e: 24, fps: 14 },
+      { key: 'z_run_down',       sheet: 'zombie_down_run',  s: 0, e: 24, fps: 14 },
+    ];
+    defs.forEach(d => {
+      if(!this.anims.exists(d.key)){
+        this.anims.create({
+          key: d.key,
+          frames: this.anims.generateFrameNumbers(d.sheet, { start: d.s, end: d.e }),
+          frameRate: d.fps,
+          repeat: -1
+        });
+      }
+    });
   }
 
   // ── World rendering ───────────────────────────────────────
@@ -135,35 +143,27 @@ this._buildFog();
 
     // Border grass
     const borderRows = 3;
-    for(let r=-borderRows; r<ROWS+borderRows; r++){
-      for(let c=-borderRows; c<COLS+borderRows; c++){
-        if(c>=0 && c<COLS && r>=0 && r<ROWS) continue;
-        const px=c*TW, py=r*TH;
-        if(hasGrass) this.add.image(px+TW/2,py+TH/2,'grass').setDisplaySize(TW,TH).setDepth(0);
-        else drawGrassTile(bgGfx, px, py);
+    for(let r = -borderRows; r < ROWS + borderRows; r++){
+      for(let c = -borderRows; c < COLS + borderRows; c++){
+        if(c >= 0 && c < COLS && r >= 0 && r < ROWS) continue;
+        const px = c * TW, py = r * TH;
+        if(hasGrass)
+          this.add.image(px + TW/2, py + TH/2, 'grass').setDisplaySize(TW, TH).setDepth(0);
+        else
+          drawGrassTile(bgGfx, px, py);
       }
     }
 
-    // Outer decorations
-    const outerDecor = [];
-    for(let c=0; c<COLS; c++){
-      outerDecor.push({c,r:-2,t:'tree'});
-      outerDecor.push({c,r:ROWS+1,t:'tree'});
+    // Dark vignette over the outer border area
+    this.borderDark = this.add.graphics().setDepth(7);
+    this.borderDark.fillStyle(0x000000, 0.88);
+    for(let r = -borderRows; r < ROWS + borderRows; r++){
+      for(let c = -borderRows; c < COLS + borderRows; c++){
+        if(c >= 0 && c < COLS && r >= 0 && r < ROWS) continue;
+          this.borderDark.fillRect(c * TW, r * TH, TW, TH);
+      }
     }
-    [-1,-2,-3].forEach(r => {
-      for(let c=1; c<COLS; c+=2) outerDecor.push({c,r,t: c%4===0?'rock': c%3===0?'stump':'bush'});
-    });
-    [ROWS, ROWS+1, ROWS+2].forEach(r => {
-      for(let c=1; c<COLS; c+=2) outerDecor.push({c,r,t: c%5===0?'flower': c%3===0?'rock':'bush', col: c%2===0?0xff88cc:0xffee44});
-    });
-    outerDecor.forEach(d => {
-      const px=d.c*TW, py=d.r*TH;
-      if(d.t==='tree')   drawTree(decorGfx, px, py);
-      else if(d.t==='bush')   drawBush(decorGfx, px, py);
-      else if(d.t==='flower') drawFlower(decorGfx, px, py, d.col||0xff88cc);
-      else if(d.t==='stump')  drawStump(decorGfx, px, py);
-      else if(d.t==='rock')   drawRock(decorGfx, px, py);
-    });
+    
 
     // Maze tiles
     for(let r=0; r<ROWS; r++){
@@ -172,21 +172,38 @@ this._buildFog();
         const px=c*TW, py=r*TH;
         const cx=px+TW/2, cy=py+TH/2;
 
+        
         if(cell === 1){
-          if(hasGrass) this.add.image(cx,cy,'grass').setDisplaySize(TW,TH).setDepth(1);
-          else drawGrassTile(floorGfx, px, py);
-          if(hasHedge){
-            this.add.image(cx, cy-WALL_H*0.4, 'hedge').setDisplaySize(TW, TH+WALL_H*0.6).setDepth(5);
-            wallGfx.fillStyle(0x000000,0.18); wallGfx.fillRect(px, py+TH-8, TW, 10);
-          } else {
-            drawHedgeWall(wallGfx, px, py);
-          }
-        } else if(cell === 'E'){
-          if(hasDirt) this.add.image(cx,cy,'dirt').setDisplaySize(TW,TH).setDepth(1);
+        if(hasGrass) this.add.image(cx,cy,'grass').setDisplaySize(TW,TH).setDepth(1);
+        else drawGrassTile(floorGfx, px, py);
+        if(hasHedge){
+          // Determine orientation: vertical if walls above/below, not left/right
+          const wallAbove = r > 0        && this.maze[r-1][c] === 1;
+          const wallBelow = r < ROWS - 1 && this.maze[r+1][c] === 1;
+          const wallLeft  = c > 0        && this.maze[r][c-1] === 1;
+          const wallRight = c < COLS - 1 && this.maze[r][c+1] === 1;
+
+          const isVertical = (wallAbove || wallBelow) && !wallLeft && !wallRight;
+
+          const hasHedgeV = this.textures.exists('hedge-V');
+          const hedgeKey  = isVertical && hasHedgeV ? 'hedge-V' : 'hedge';
+
+          this.add.image(cx, cy - WALL_H * 0.4, hedgeKey)
+            .setDisplaySize(TW, TH + WALL_H * 0.6)
+            .setDepth(5);
+          wallGfx.fillStyle(0x000000, 0.18);
+          wallGfx.fillRect(px, py + TH - 8, TW, 10);
+        } else {
+          drawHedgeWall(wallGfx, px, py);
+        }
+      }
+        
+        else if(cell === 'E'){
+          if(hasDirt) this.add.image(cx, cy, 'dirt').setDisplaySize(TW, TH).setDepth(1);
           else drawDirtTile(floorGfx, px, py);
           drawBrokenHedgeOpening(wallGfx, px, py);
         } else {
-          if(hasDirt) this.add.image(cx,cy,'dirt').setDisplaySize(TW,TH).setDepth(1);
+          if(hasDirt) this.add.image(cx, cy, 'dirt').setDisplaySize(TW, TH).setDepth(1);
           else drawDirtTile(floorGfx, px, py);
         }
       }
@@ -198,57 +215,87 @@ this._buildFog();
     this.worldH    = worldH;
   }
 
-  // COMMENTED OUT: Fog of war system
+  // ── Fog of war ────────────────────────────────────────────
   _buildFog(){
-  const totalW = COLS * TW;
-  const totalH = ROWS * TH;
+    const totalW = COLS * TW;
+    const totalH = ROWS * TH;
+    const borderRows = 3;
+    const pad = borderRows * TW;
 
-  // Dark overlay covering the whole world
-  this.fogLayer = this.add.graphics().setDepth(49);
-  this.fogLayer.fillStyle(0x000000, 0.88);
-  this.fogLayer.fillRect(0, 0, totalW, totalH);
+    this.fogLayer = this.add.graphics().setDepth(49);
+    this.fogLayer.fillStyle(0x000000, 0.88);
+    this.fogLayer.fillRect(-pad, -pad, totalW + pad * 2, totalH + pad * 2);
 
-  // Circle mask that follows the player
-  this.fogMaskShape = this.make.graphics({ x: 0, y: 0, add: false });
-  this.fogMaskShape.fillStyle(0xffffff);
-  this.fogMaskShape.fillCircle(0, 0, this.fogRevealRadius);
+    this.fogMaskShape = this.make.graphics({ x: 0, y: 0, add: false });
+    this.fogMaskShape.fillStyle(0xffffff);
+    this.fogMaskShape.fillCircle(0, 0, this.fogRevealRadius);
 
-  const mask = this.fogMaskShape.createGeometryMask();
-  mask.invertAlpha = true; // punch hole in the fog
-  this.fogLayer.setMask(mask);
+    const mask = this.fogMaskShape.createGeometryMask();
+    mask.invertAlpha = true;
+    this.fogLayer.setMask(mask);
+    this.borderDark.setMask(mask);
+    this.fogRevealRadius = SIGHT_R;
+  }
 
-  this.fogRevealRadius = SIGHT_R;
-}
+  _updateFog(){
+    this.fogMaskShape.x = this.playerBody.x;
+    this.fogMaskShape.y = this.playerBody.y;
+    this.fogMaskShape.clear();
+    this.fogMaskShape.fillStyle(0xffffff);
+    this.fogMaskShape.fillCircle(0, 0, this.fogRevealRadius);
+  }
 
-_updateFog(){
-  // Move the mask circle to follow the player
-  this.fogMaskShape.x = this.playerBody.x;
-  this.fogMaskShape.y = this.playerBody.y;
-
-  // Redraw circle at new position
-  this.fogMaskShape.clear();
-  this.fogMaskShape.fillStyle(0xffffff);
-  this.fogMaskShape.fillCircle(0, 0, this.fogRevealRadius);
-}
-
-  
-
+  // ── Player ────────────────────────────────────────────────
   _spawnPlayer(){
-    const playerSize = TW * 0.9;
-    if(this.hasPlayerFront){
-      this.playerBody = this.physics.add.image(this.startX, this.startY, 'player_front')
-        .setDisplaySize(playerSize, playerSize).setDepth(3);
-      this.lastDir = 'front';
+    const playerSize = TW * 1.8;
+    this.lastDir = 'down';
+
+    if(this.hasPlayerSheet){
+      this.playerBody = this.physics.add.sprite(this.startX, this.startY, 'player_down')
+        .setDisplaySize(playerSize, playerSize).setDepth(10);
+      this.playerBody.play('player_walk_down');
     } else {
+      // Fallback drawn player
       const pg = this.add.graphics();
       pg.fillStyle(0x4a7c3f); pg.fillRect(-14,-18,28,26);
       pg.fillStyle(0xd4956a); pg.fillEllipse(0,-26,22,22);
       pg.fillStyle(0x3a2010); pg.fillRect(-9,-34,18,10);
       pg.fillStyle(0x1a1a2e); pg.fillEllipse(-5,-28,5,5); pg.fillEllipse(5,-28,5,5);
       pg.generateTexture('pfb', 32, 50); pg.destroy();
-      this.playerBody = this.physics.add.image(this.startX, this.startY, 'pfb').setDepth(3);
+      this.playerBody = this.physics.add.image(this.startX, this.startY, 'pfb').setDepth(10);
     }
     this.playerBody.setCollideWorldBounds(false);
+    this.playerMoving = false;
+  }
+
+  _updatePlayerAnim(vx, vy){
+    if(!this.hasPlayerSheet) return;
+
+    const moving = vx !== 0 || vy !== 0;
+    let newDir = this.lastDir;
+
+    if(moving){
+      if(Math.abs(vy) > Math.abs(vx)){
+        newDir = vy < 0 ? 'up' : 'down';
+      } else {
+        newDir = 'lr';
+      }
+      this.playerBody.setFlipX(vx < 0);
+    }
+
+    // Only switch anim if direction changed or movement state changed
+    if(newDir !== this.lastDir || moving !== this.playerMoving){
+      this.lastDir = newDir;
+      this.playerMoving = moving;
+      if(moving){
+        if(newDir === 'up')   this.playerBody.play('player_walk_up',   true);
+        if(newDir === 'down') this.playerBody.play('player_walk_down', true);
+        if(newDir === 'lr')   this.playerBody.play('player_walk_lr',   true);
+      } else {
+        this.playerBody.stop();
+        this.playerBody.setFrame(0);
+      }
+    }
   }
 
   _setupAudio(){
@@ -259,14 +306,15 @@ _updateFog(){
     if(this.hasZSound){
       this.zombieSound = this.sound.add('zombieSound', { volume: 0.7 });
     }
-    this.lastZombieSoundTime = 0;
+    this.lastZombieSoundTime  = 0;
     this.lastZombieSoundCheck = 0;
   }
 
+  // ── Zombies ───────────────────────────────────────────────
   _spawnZombies(){
     this.zombies = [];
     const cfg = LEVEL_CONFIG[state.currentLevel] || { solo: 2, herd: 4 };
-    const zombieSize = TW * 1.80;
+    const zombieSize = TW * 1.8;
 
     const farCells = this.floorCells.filter(({x,y}) =>
       Math.hypot(x - this.startX, y - this.startY) > 5*TW
@@ -279,11 +327,10 @@ _updateFog(){
       let zbody;
 
       if(this.hasZombieSheet){
-        zbody = this.physics.add.sprite(cell.x, cell.y, 'zombie_walk')
+        zbody = this.physics.add.sprite(cell.x, cell.y, 'zombie_lr')
           .setDisplaySize(zombieSize, zombieSize).setDepth(3);
-        zbody.play('zombie_walk');
+        zbody.play('z_walk_lr');
       } else {
-        // Fallback drawn zombie
         const zg = this.add.graphics();
         zg.fillStyle(0x8acc70); zg.fillEllipse(0,-18,22,22);
         zg.fillStyle(0x5a7a3a); zg.fillRect(-10,-6,20,20);
@@ -297,14 +344,38 @@ _updateFog(){
       }
 
       zbody.chasing     = false;
-      zbody.wasChasing  = false; // track animation state changes
       zbody.chaseTimer  = 0;
       zbody.wanderTimer = Phaser.Math.FloatBetween(0.3, 1.8);
       zbody.targetX     = cell.x;
       zbody.targetY     = cell.y;
       zbody.bobTimer    = Phaser.Math.FloatBetween(0, Math.PI*2);
       zbody.isHerd      = i >= cfg.solo;
+      zbody.dir         = 'lr'; // current facing direction
+      zbody.wasChasing  = false;
       this.zombies.push(zbody);
+    }
+  }
+
+  // Pick the right zombie anim key based on direction + chase state
+  _zombieAnim(z, chasing){
+    const type = chasing ? 'run' : 'walk';
+    return `z_${type}_${z.dir}`;
+  }
+
+  _setZombieDir(z, dx, dy, chasing){
+    let newDir;
+    if(Math.abs(dy) > Math.abs(dx)){
+      newDir = dy < 0 ? 'up' : 'down';
+    } else {
+      newDir = 'lr';
+    }
+    z.setFlipX(dx < 0);
+
+    const newChasing = chasing;
+    if(newDir !== z.dir || newChasing !== z.wasChasing){
+      z.dir = newDir;
+      z.wasChasing = newChasing;
+      if(this.hasZombieSheet) z.play(this._zombieAnim(z, chasing), true);
     }
   }
 
@@ -322,18 +393,18 @@ _updateFog(){
 
   // O(1) wall collision via grid
   wallCollides(x, y, r){
-  const minC = Math.floor((x - r) / TW);
-  const maxC = Math.floor((x + r) / TW);
-  const minR = Math.floor((y - r) / TH);
-  const maxR = Math.floor((y + r) / TH);
-  for(let rr = minR; rr <= maxR; rr++){
-    for(let cc = minC; cc <= maxC; cc++){
-      if(rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) continue;
-      if(this.wallGrid[rr][cc]) return true;
+    const minC = Math.floor((x - r) / TW);
+    const maxC = Math.floor((x + r) / TW);
+    const minR = Math.floor((y - r) / TH);
+    const maxR = Math.floor((y + r) / TH);
+    for(let rr = minR; rr <= maxR; rr++){
+      for(let cc = minC; cc <= maxC; cc++){
+        if(rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) return true;
+        if(this.wallGrid[rr][cc]) return true;
+      }
     }
+    return false;
   }
-  return false;
-}
 
   hasLOS(ax, ay, bx, by){
     const steps = 28;
@@ -351,12 +422,11 @@ _updateFog(){
   }
 
   update(time, delta){
-  if(this.gameOver || this.transitioning) return;
-  const dt = delta / 1000;
-  const p  = this.playerBody;
+    if(this.gameOver || this.transitioning) return;
+    const dt = delta / 1000;
+    const p  = this.playerBody;
 
-  this._updateFog();
-
+    this._updateFog();
 
     // Exit glow
     this.exitGlowT += dt * 2.5;
@@ -379,22 +449,8 @@ _updateFog(){
     if(!this.wallCollides(nx, p.y, 28)) p.x = nx;
     if(!this.wallCollides(p.x, ny, 28)) p.y = ny;
 
-    if(this.hasPlayerFront){
-      let newDir = this.lastDir;
-      if(Math.abs(vx) > Math.abs(vy)){
-        if(vx < 0) newDir = 'left'; else if(vx > 0) newDir = 'right';
-      } else {
-        if(vy < 0) newDir = 'back'; else if(vy > 0) newDir = 'front';
-      }
-      if(newDir !== this.lastDir){
-        this.lastDir = newDir;
-        p.setTexture('player_' + newDir);
-      }
-    } else {
-      if(vx < 0) p.setFlipX(true);
-      if(vx > 0) p.setFlipX(false);
-    }
-    p.setDepth(3 + p.y * 0.0001);
+    this._updatePlayerAnim(vx, vy);
+    p.setDepth(10 + p.y * 0.0001);
 
     // Check exit
     if(this.exitCol >= 0){
@@ -413,14 +469,11 @@ _updateFog(){
       const canSee = dist < SIGHT_R && this.hasLOS(z.x, z.y, p.x, p.y);
 
       if(canSee){
-        // Transition to chasing
         if(!z.chasing){
           z.chasing = true;
           z.chaseTimer = CHASE_MEMORY;
-          // Switch to run animation
-          if(this.hasZombieSheet) z.play('zombie_run', true);
         } else {
-          z.chaseTimer = CHASE_MEMORY; // keep refreshing while in sight
+          z.chaseTimer = CHASE_MEMORY;
         }
 
         if(!state.herdAlerted){
@@ -429,7 +482,6 @@ _updateFog(){
             if(other !== z && other.isHerd && Math.hypot(other.x - z.x, other.y - z.y) < HERD_RADIUS){
               other.chasing = true;
               other.chaseTimer = CHASE_MEMORY;
-              if(this.hasZombieSheet) other.play('zombie_run', true);
             }
           }
           document.getElementById('alert-bar').classList.add('show');
@@ -439,8 +491,6 @@ _updateFog(){
         z.chaseTimer -= dt;
         if(z.chaseTimer <= 0){
           z.chasing = false;
-          // Switch back to walk animation
-          if(this.hasZombieSheet) z.play('zombie_walk', true);
         }
       }
 
@@ -456,10 +506,7 @@ _updateFog(){
         else if(!this.wallCollides(z.x-20, zy2, 22)){ z.x -= 18*dt; z.y = zy2; }
         else if(!this.wallCollides(z.x+20, zy2, 22)){ z.x += 18*dt; z.y = zy2; }
 
-        // Flip sprite for left/right direction (no directional sheet needed)
-        if(this.hasZombieSheet){
-          z.setFlipX(dx < 0);
-        }
+        this._setZombieDir(z, dx, dy, true);
 
       } else {
         z.wanderTimer -= dt;
@@ -483,10 +530,7 @@ _updateFog(){
             if(dest){ z.targetX = dest.x; z.targetY = dest.y; }
             z.wanderTimer = Phaser.Math.FloatBetween(1.5, 3.0);
           }
-          // Flip for wander direction
-          if(this.hasZombieSheet){
-            z.setFlipX(wdx < 0);
-          }
+          this._setZombieDir(z, wdx, wdy, false);
         }
       }
 

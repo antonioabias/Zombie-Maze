@@ -12,7 +12,6 @@ export const SIGHT_R       = 320;
 export const CHASE_MEMORY  = 4;
 export const HERD_RADIUS   = 360;
 export const ZOMBIE_SOUND_CD = 2500;
-export const VISION_RADIUS = 180;
 
 export const LEVEL_CONFIG = [
   { solo: 2, herd: 4 },

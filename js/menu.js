@@ -68,12 +68,49 @@ const MENU_CONTENT = {
 
 export class Menu {
   constructor({ onPlay, gameRef }) {
-    this.onPlay = onPlay;
-    this.gameRef = gameRef;
-    this._bindButtons();
-    this._loadSettings();
-    this._animateMenuZombie();
-  }
+  this.onPlay = onPlay;
+  this.gameRef = gameRef;
+  this.menuMusic = document.getElementById('menu-music'); 
+  this._bindButtons();
+  this._loadSettings();
+  this._animateMenuZombie();
+  this.menuMusic.volume = this.bgmVolume;
+  this._setupVisibilityHandling();
+  this._primeAutoplay();
+}
+
+
+  _primeAutoplay() {
+  const tryPlay = () => {
+    this.menuMusic.play()
+      .then(() => console.log('menu music started'))
+      .catch(err => console.warn('menu music blocked:', err));
+    document.removeEventListener('click', tryPlay);
+    document.removeEventListener('keydown', tryPlay);
+  };
+  document.addEventListener('click', tryPlay, { once: true });
+  document.addEventListener('keydown', tryPlay, { once: true });
+}
+
+  _setupVisibilityHandling() {
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      this.menuMusic.pause();
+      if (this.gameRef) {
+        const scene = this.gameRef.scene.getScene('MazeScene');
+        scene?.bgm?.pause();
+      }
+    } else {
+      const inMenu = !document.getElementById('main-menu').classList.contains('hidden');
+      if (inMenu) {
+        this.menuMusic.play().catch(() => {});
+      } else if (this.gameRef) {
+        const scene = this.gameRef.scene.getScene('MazeScene');
+        scene?.bgm?.resume();
+      }
+    }
+  });
+}
 
   _animateMenuZombie() {
     const el = document.getElementById('menu-zombie');

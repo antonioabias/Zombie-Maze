@@ -155,7 +155,7 @@ export class MazeScene extends Phaser.Scene {
     }
 
     // Dark vignette over the outer border area
-    this.borderDark = this.add.graphics().setDepth(7);
+    this.borderDark = this.add.graphics().setDepth(1000000);
     this.borderDark.fillStyle(0x000000, 0.88);
     for(let r = -borderRows; r < ROWS + borderRows; r++){
       for(let c = -borderRows; c < COLS + borderRows; c++){
@@ -190,7 +190,7 @@ export class MazeScene extends Phaser.Scene {
 
           this.add.image(cx, cy - WALL_H * 0.4, hedgeKey)
             .setDisplaySize(TW, TH + WALL_H * 0.6)
-            .setDepth(5);
+            .setDepth(py + TH);
           wallGfx.fillStyle(0x000000, 0.18);
           wallGfx.fillRect(px, py + TH - 8, TW, 10);
         } else {
@@ -222,7 +222,7 @@ export class MazeScene extends Phaser.Scene {
     const borderRows = 3;
     const pad = borderRows * TW;
 
-    this.fogLayer = this.add.graphics().setDepth(49);
+    this.fogLayer = this.add.graphics().setDepth(1000001);
     this.fogLayer.fillStyle(0x000000, 0.88);
     this.fogLayer.fillRect(-pad, -pad, totalW + pad * 2, totalH + pad * 2);
 
@@ -450,7 +450,7 @@ export class MazeScene extends Phaser.Scene {
     if(!this.wallCollides(p.x, ny, 28)) p.y = ny;
 
     this._updatePlayerAnim(vx, vy);
-    p.setDepth(10 + p.y * 0.0001);
+    p.setDepth(p.y);
 
     // Check exit
     if(this.exitCol >= 0){
@@ -535,7 +535,7 @@ export class MazeScene extends Phaser.Scene {
       }
 
       z.bobTimer += dt * (z.chasing ? 8 : 4);
-      z.setDepth(3 + z.y * 0.0001);
+      z.setDepth(z.y);
       if(!state.invincible && dist < 30) this.hitPlayer();
     }
 

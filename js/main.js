@@ -49,6 +49,7 @@ function startGame() {
     document.getElementById('overlay').classList.remove('show');
     document.getElementById('game-wrap').classList.add('hidden');
     document.getElementById('main-menu').classList.remove('hidden');
+    menu.resumeMenuMusic();
   });
 
   document.getElementById('btn-settings').addEventListener('click', () => {

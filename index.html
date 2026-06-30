@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>Zombie Maze</title>
+  <link rel="icon" type="image/x-icon" href="zombie.ico">
   <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -16,6 +17,7 @@
   <!-- ═══════════ MAIN MENU ═══════════ -->
   <div id="main-menu">
     <div class="menu-bg"></div>
+    <div id="menu-zombie"></div>
     <div class="menu-content">
       <nav class="menu-buttons">
         <button class="menu-btn primary" data-action="play">
@@ -66,7 +68,7 @@
       <button id="btn-settings" title="Settings">⚙️</button>
     </div>
 
-    <div id="alert-bar">🧟 HERD INCOMING!</div>
+    <div id="alert-bar">HERD INCOMING!</div>
     <div id="game-container"></div>
     <div id="overlay">
       <div id="overlay-box">
@@ -78,7 +80,7 @@
     </div>
   </div>
 
-  
+  <audio id="menu-music" src="assets/music/backgroundmusic.mp3" loop></audio>
 
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
   <script type="module" src="js/main.js"></script>

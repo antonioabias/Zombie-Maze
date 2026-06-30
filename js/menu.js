@@ -2,18 +2,18 @@
 
 const MENU_CONTENT = {
   instructions: {
-    title: '📖 How to Play',
+    title: 'How to Play',
     body: `
-      <h3>🎯 Objective</h3>
+      <h3>Objective</h3>
       <p>Navigate through the hedge maze and reach the <strong style="color:#ffe135">golden exit</strong> on the far side. Avoid the zombies!</p>
 
-      <h3>🎮 Controls</h3>
+      <h3>Controls</h3>
       <ul>
         <li>Move: <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or Arrow Keys</li>
         <li>Diagonal movement works too!</li>
       </ul>
 
-      <h3>🧟 Zombies</h3>
+      <h3>Zombies</h3>
       <ul>
         <li>Zombies wander the maze until they spot you</li>
         <li>If one sees you, nearby zombies form a <strong style="color:#ff6b6b">HORDE</strong> and chase!</li>
@@ -21,30 +21,30 @@ const MENU_CONTENT = {
         <li>You have <strong>3 lives</strong> — each zombie hit costs one ❤️</li>
       </ul>
 
-      <h3>🏁 The Exit</h3>
+      <h3>The Exit</h3>
       <p>Look for the <strong style="color:#ffe135">broken hedge opening</strong> with a golden glow. Touch it to advance!</p>
     `
   },
   settings: {
-    title: '⚙️ Settings',
+    title: 'Settings',
     body: `
       <div class="setting-row">
-        <label>🎵 Background Music</label>
+        <label>Background Music</label>
         <input type="range" id="vol-bgm" min="0" max="100" value="40">
       </div>
       <div class="setting-row">
-        <label>🧟 Zombie Sounds</label>
+        <label>Zombie Sounds</label>
         <input type="range" id="vol-zombie" min="0" max="100" value="70">
       </div>
       <div class="setting-row">
-        <label>📳 Screen Shake</label>
+        <label>Screen Shake</label>
         <input type="checkbox" id="opt-shake" checked style="width:20px;height:20px;accent-color:#5dde3a;">
       </div>
       <p style="margin-top:20px;font-size:13px;opacity:0.6;">Settings are saved automatically.</p>
     `
   },
   about: {
-    title: 'ℹ️ About',
+    title: 'About',
     body: `
       <h3>Zombie Maze</h3>
       <p>A 2D survival maze game built with <strong>Phaser 3</strong>.</p>
@@ -69,9 +69,29 @@ const MENU_CONTENT = {
 export class Menu {
   constructor({ onPlay, gameRef }) {
     this.onPlay = onPlay;
-    this.gameRef = gameRef; // will be set when game starts
+    this.gameRef = gameRef;
     this._bindButtons();
     this._loadSettings();
+    this._animateMenuZombie();
+  }
+
+  _animateMenuZombie() {
+    const el = document.getElementById('menu-zombie');
+    if (!el) return;
+
+    const COLS = 5;
+    const ROWS = 5;
+    const TOTAL_FRAMES = 25; // matches frames 0–24 used in scene.js
+    const FPS = 8;
+    const size = el.offsetWidth || 420;
+
+    let frame = 0;
+    setInterval(() => {
+      const col = frame % COLS;
+      const row = Math.floor(frame / COLS);
+      el.style.backgroundPosition = `-${col * size}px -${row * size}px`;
+      frame = (frame + 1) % TOTAL_FRAMES;
+    }, 1000 / FPS);
   }
 
   _bindButtons() {
@@ -95,7 +115,12 @@ export class Menu {
   _startGame() {
     document.getElementById('main-menu').classList.add('hidden');
     document.getElementById('game-wrap').classList.remove('hidden');
+    if (this.menuMusic) this.menuMusic.pause();
     if (this.onPlay) this.onPlay();
+  }
+
+  resumeMenuMusic() {
+    if (this.menuMusic) this.menuMusic.play().catch(() => {});
   }
 
   _openModal(key) {
@@ -122,6 +147,7 @@ export class Menu {
       bgmSlider.addEventListener('input', (e) => {
         const v = e.target.value / 100;
         this._saveSetting('bgmVolume', v);
+        if (this.menuMusic) this.menuMusic.volume = v;
         if (this.gameRef && this.gameRef.scene.scenes[0] && this.gameRef.scene.scenes[0].bgm) {
           this.gameRef.scene.scenes[0].bgm.setVolume(v);
         }

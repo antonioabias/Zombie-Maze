@@ -171,6 +171,33 @@ body{
 }
 
 
+/* ═══════════ HOMEPAGE IDLE ZOMBIE ═══════════ */
+#menu-zombie{
+  position:absolute;
+  left:50%;
+  bottom:-4%;
+  transform:translateX(-50%);
+  width:min(75vh, 600px);
+  height:min(75vh, 600px);
+  background-image:url('../assets/sprites/Zombie-menu.png');
+  background-repeat:no-repeat;
+  background-size:500% 500%;
+  image-rendering:-webkit-optimize-contrast;
+  image-rendering:crisp-edges;
+  z-index:0;
+  pointer-events:none;
+  -webkit-mask-image:linear-gradient(to bottom, black 58%, transparent 62%);
+  mask-image:linear-gradient(to bottom, black 58%, transparent 62%);
+}
+
+@media(max-width:768px){
+  #menu-zombie{
+    width:min(60vh, 380px);
+    height:min(60vh, 380px);
+  }
+}
+
+
 /* ═══════════ MODAL (Instructions / Settings / About) ═══════════ */
 .modal{
   position:fixed;inset:0;z-index:600;
